@@ -540,30 +540,52 @@
   </div>
   
   <script>
-    function checkFields() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const signInButton = document.getElementById('signin-button');
-          
-      if (email.trim() !== '' && password.trim() !== '') {
-        signInButton.classList.add('active');
-      } else {
-        signInButton.classList.remove('active');
+    (function () {
+      var email = document.getElementById('email');
+      var password = document.getElementById('password');
+      var button = document.getElementById('signin-button');
+      var KIND = 'signin';
+
+      function filled() { return email.value.trim() !== '' && password.value.trim() !== ''; }
+      function checkFields() { button.classList.toggle('active', filled()); }
+      function validEmailOrPhone(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || (KIND === 'register' && /^\+?[0-9]{8,15}$/.test(v));
       }
-    }
-        
-    document.getElementById('email').addEventListener('input', checkFields);
-    document.getElementById('password').addEventListener('input', checkFields);
-        
-    document.getElementById('signin-button').addEventListener('click', function() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-          
-      if (email.trim() !== '' && password.trim() !== '') {
-        console.log('Sign in attempt with:', email);
-        window.location.href = "LandingPageSignUp.html"; 
+      function msg(t, ok) { (window.FMC && FMC.toast) ? FMC.toast(t, ok) : alert(t); }
+
+      function submit() {
+        var v = email.value.trim();
+        if (!filled()) { msg('Email dan password wajib diisi.'); (v ? password : email).focus(); return; }
+        if (!validEmailOrPhone(v)) { msg(KIND === 'register' ? 'Masukkan email atau nomor HP yang valid.' : 'Format email belum benar.'); email.focus(); return; }
+        if (password.value.length < 6) { msg('Password minimal 6 karakter.'); password.focus(); return; }
+        try { localStorage.setItem('fmc_user', v); } catch (e) {}
+        msg(KIND === 'register' ? 'Akun berhasil dibuat!' : 'Berhasil masuk!', true);
+        setTimeout(function () { window.location.href = 'LandingPageSignUp.html'; }, 600);
       }
-    });
+
+      email.addEventListener('input', checkFields);
+      password.addEventListener('input', checkFields);
+      [email, password].forEach(function (el) {
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+      });
+      button.setAttribute('role', 'button');
+      button.setAttribute('tabindex', '0');
+      button.style.cursor = 'pointer';
+      button.addEventListener('click', submit);
+      button.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+
+      // Forgot password (hanya di halaman Sign In)
+      document.querySelectorAll('.button4').forEach(function (el) {
+        if (!/forgot/i.test(el.textContent)) return;
+        var target = el.closest('.button3') || el;
+        target.style.cursor = 'pointer';
+        target.addEventListener('click', function () {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim())) { msg('Isi email dulu, nanti kami kirim link reset.'); email.focus(); return; }
+          msg('Link reset password dikirim ke ' + email.value.trim(), true);
+        });
+      });
+      checkFields();
+    })();
   </script>
   <script src="nav.js" defer></script>
 </body>

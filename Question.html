@@ -355,7 +355,7 @@
       this JavaScript function?
     </div>
     <div class="btn-inactive">
-      <div class="continue"><a href="Result.html" style="color: white;">Continue</a></div>
+      <div class="continue">Continue</div>
     </div>
     <div class="line-1"></div>
     <div class="countdown">
@@ -373,7 +373,7 @@
     <div class="rectangle-6"></div>
     
     <!-- Jawaban Benar -->
-    <div class="right-answ" onclick="cekJawaban(true)">
+    <div class="right-answ">
       <div class="rectangle-8"></div>
       <div class="rectangle-7"></div>
       <div class="correct-answer">A. Undefined</div>
@@ -381,29 +381,19 @@
     </div>
     
     <!-- Jawaban Salah -->
-    <div class="bad-answ" onclick="cekJawaban(false)">
+    <div class="bad-answ">
       <div class="rectangle-8"></div>
       <div class="rectangle-7"></div>
       <div class="incorrect-answer">B. An error message</div>
       <div class="frame-2"><div class="_1">2</div></div>
     </div>
     
-    <div class="bad-answ2" onclick="cekJawaban(false)">
+    <div class="bad-answ2">
       <div class="rectangle-8"></div>
       <div class="rectangle-7"></div>
       <div class="incorrect-answer2">C. The expected value</div>
       <div class="frame-2"><div class="_1">3</div></div>
     </div>
-
-    <script>
-        function cekJawaban(isCorrect) {
-            if (isCorrect) {
-                alert("Jawaban Anda benar!");
-            } else {
-                alert("Jawaban Anda salah, silakan coba lagi!");
-            }
-        }
-    </script>
     </div>
     <img class="illustration" src="select/soal1.png" />
   </div>

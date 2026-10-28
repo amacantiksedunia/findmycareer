@@ -329,7 +329,7 @@
     var contTxt = root.querySelector('.continue');
     var secEl = root.querySelector('.sec');
     var ring = root.querySelector('.countdown');
-    var old = root.querySelector('.illustration');
+    var old = document.querySelector('.illustration');
     var box = document.createElement('pre');
     box.className = 'code-box';
     if (old) old.replaceWith(box); else root.appendChild(box);
@@ -346,6 +346,8 @@
       '.question-1 .countdown{border-radius:50%}' +
       '.question-1 .countdown::after{content:"";position:absolute;inset:12px;border-radius:50%;background:#fff}' +
       '.question-1 .countdown-number{z-index:2}' +
+      '.question-1 .correct-answer,.question-1 .incorrect-answer,.question-1 .incorrect-answer2{width:auto!important;right:auto!important;white-space:nowrap}' +
+      '.illustration{display:none!important}' +
       '.right-answ,.bad-answ,.bad-answ2{cursor:pointer;transition:transform .1s}' +
       '.right-answ:hover,.bad-answ:hover,.bad-answ2:hover{transform:translateY(-2px)}' +
       '.is-locked{cursor:default!important;pointer-events:none}' +

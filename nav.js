@@ -111,6 +111,7 @@
     'mentoring': 'Mentoring.html',
     'forum communities': 'ForumComunity.html',
     'complete profile': 'MyProfile.html',
+    'edit': 'MyProfile.html',
     'my profile': 'MyProfile.html',
     'profile': 'MyProfile.html',
     'profile details': 'MyProfile.html',
@@ -150,7 +151,7 @@
     'support@findmycareer.com': MAIL
   };
   var FILTER_ROUTES = { 'remote': 'FindJobRemote.html', 'hybrid': 'FindJobHybrid.html', 'on-site': 'FindJobOneSite.html' };
-  var CLASS_ROUTES = [['.job-list', 'Recuritment.html']];
+  var CLASS_ROUTES = [];
   var CONTAINER_SEL = '[class*="button"],[class*="btn"],[class*="link-button"],[class*="primary"],[class*="choose-plan"]';
   var INTERACTIVE = 'input,textarea,select,button,label';
 
@@ -459,7 +460,7 @@
         b.querySelector('#pay-x').onclick = close;
         b.querySelector('#pay-ok').onclick = function () {
           close(); toast('Pembayaran berhasil! Selamat datang di Premium.', true);
-          setTimeout(function () { go('PremInterview.html'); }, 1400);
+          setTimeout(function () { go(store('fmc_after_pay') || 'PremInterview.html'); }, 1400);
         };
       });
     });
@@ -485,6 +486,161 @@
     }
   }
 
+
+  /* ---------- 5. kartu, dropdown, search, forum ---------- */
+  // Figma menamai varian dengan angka (job-list, job-list2, ...). Cocokkan semua varian.
+  function family(base, scope) {
+    var re = new RegExp('^' + base + '\\d*$'), out = [];
+    (scope || document).querySelectorAll('[class*="' + base + '"]').forEach(function (el) {
+      var ok = false;
+      el.className.toString().split(/\s+/).forEach(function (c) { if (re.test(c)) ok = true; });
+      if (ok) out.push(el);
+    });
+    return out;
+  }
+  function textOf(el) { return (el.textContent || '').replace(/\s+/g, ' ').trim(); }
+
+  // Halaman gratis -> halaman Premium yang akan dibuka setelah bayar
+  var PREMIUM_OF = {
+    'MentoringInterview.html': 'PremInterview.html', 'CVMentoring.html': 'PremCV.html',
+    'Bootcamp.html': 'PremBootcamp.html', 'Consultation.html': 'PremConsultation.html'
+  };
+
+  function makeSearch(el, cardSel) {
+    var ph = textOf(el);
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.placeholder = ph; inp.className = 'fmc-search';
+    inp.setAttribute('aria-label', ph);
+    el.textContent = '';
+    el.appendChild(inp);
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim().toLowerCase(), shown = 0;
+      document.querySelectorAll(cardSel).forEach(function (c) {
+        var hit = !q || textOf(c).toLowerCase().indexOf(q) !== -1;
+        c.style.display = hit ? '' : 'none';
+        if (hit) shown++;
+      });
+      inp._shown = shown;
+    });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && inp.value.trim() && inp._shown === 0) toast('Tidak ada hasil untuk "' + inp.value.trim() + '".');
+    });
+  }
+
+  function initCards() {
+    var css = document.createElement('style');
+    css.textContent =
+      '.fmc-search{background:transparent;border:0;outline:0;width:100%;min-width:0;font:inherit;color:#202430;padding:0}' +
+      '.fmc-search::placeholder{color:#7a8594;opacity:1}' +
+      '[data-nav].fmc-card{transition:transform .15s,box-shadow .15s}' +
+      '[data-nav].fmc-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.12)}' +
+      '.dropdown .menu>[class^="item-"]{cursor:pointer;transition:background .12s}' +
+      '.dropdown .menu>[class^="item-"]:hover{background:#eaf4fb}' +
+      '.is-liked{filter:invert(24%) sepia(95%) saturate(5000%) hue-rotate(345deg) brightness(95%)}' +
+      '.is-saved{filter:invert(32%) sepia(90%) saturate(1800%) hue-rotate(180deg)}';
+    document.head.appendChild(css);
+    function card(el, fn) { el.classList.add('fmc-card'); bind(el, fn); }
+
+    // lowongan (semua varian job-list*) -> detail
+    family('job-list').forEach(function (el) {
+      if (el.querySelector('[class*="job-list"]')) return;
+      if (el.closest('[class*="job-recommendation"]') && /Recuritment/.test(file)) return;
+      card(el, function () { go('Recuritment.html'); });
+    });
+
+    // kartu karier di AfterTest -> cari lowongan
+    if (!document.querySelector('.select-interests')) {
+      family('job-category').forEach(function (el) { card(el, function () { go('FindJobOneSite.html'); }); });
+    }
+
+    // kartu materi / kursus
+    family('course').forEach(function (el) {
+      if (file === 'AfterTest.html') return card(el, function () { go('Mentoring.html'); });
+      var info = el.querySelector('.course-infor');
+      var title = info && info.children[1] ? textOf(info.children[1]) : textOf(el).slice(0, 80);
+      var badge = el.querySelector('.category-badge');
+      card(el, function () {
+        modal('<div style="font:600 12px sans-serif;color:#0077b6;text-transform:uppercase;letter-spacing:.05em">' + (badge ? textOf(badge) : 'Materi') + '</div>' +
+          '<h3 style="margin:6px 0 14px;font:700 20px/1.3 sans-serif"></h3>' +
+          '<p style="margin:0 0 20px;color:#576675">Materi ini termasuk dalam paket Premium kamu. Mulai belajar sekarang?</p>' +
+          '<div style="display:flex;gap:10px;justify-content:flex-end"><button id="cr-x" style="' + BTN + 'background:#eef0f6">Nanti</button>' +
+          '<button id="cr-ok" style="' + BTN + 'background:#0077b6;color:#fff">Mulai Belajar</button></div>', function (b, close) {
+          b.querySelector('h3').textContent = title;
+          b.querySelector('#cr-x').onclick = close;
+          b.querySelector('#cr-ok').onclick = function () { close(); toast('Materi dibuka: ' + title, true); };
+        });
+      });
+    });
+
+    // kartu mentor (PremConsultation)
+    document.querySelectorAll('[class^="mentor-"]').forEach(function (el, i) {
+      if (!/^mentor-\d+$/.test(el.className.toString().split(' ')[0])) return;
+      card(el, function () {
+        modal('<h3 style="margin:0 0 4px;font:700 20px sans-serif">Book Mentor #' + (i + 1) + '</h3>' +
+          '<p style="margin:0 0 14px;color:#576675">Pilih jadwal sesi konsultasi.</p>' +
+          '<select id="bk" style="' + FIELD + '"><option>Senin, 10:00</option><option>Rabu, 14:00</option><option>Jumat, 16:00</option></select>' +
+          '<div style="display:flex;gap:10px;justify-content:flex-end"><button id="bk-x" style="' + BTN + 'background:#eef0f6">Batal</button>' +
+          '<button id="bk-ok" style="' + BTN + 'background:#0077b6;color:#fff">Book Sesi</button></div>', function (b, close) {
+          b.querySelector('#bk-x').onclick = close;
+          b.querySelector('#bk-ok').onclick = function () { close(); toast('Sesi berhasil dipesan: ' + b.querySelector('#bk').value, true); };
+        });
+      });
+    });
+
+    // lowongan serupa di halaman detail
+    document.querySelectorAll('.job-name-company').forEach(function (el) {
+      var c = el.parentElement; if (c) card(c, function () { go('Recuritment.html'); });
+    });
+    // bookmark / simpan
+    document.querySelectorAll('.save-icon,[class^="bookmark-simple"]').forEach(function (el) {
+      var t = el.closest('.button-and-save') ? el : el;
+      bind(t, function (e) {
+        var on = t.classList.toggle('is-saved');
+        toast(on ? 'Lowongan disimpan.' : 'Lowongan dihapus dari simpanan.', on);
+      });
+    });
+
+    // dropdown fitur Premium di halaman mentoring gratis
+    var after = PREMIUM_OF[file];
+    if (after) store('fmc_after_pay', after);
+    document.querySelectorAll('.dropdown .menu > [class^="item-"]').forEach(function (el) {
+      var name = textOf(el);
+      bind(el, function () {
+        toast(name + ' adalah fitur Premium. Mengarahkan ke halaman paket...');
+        setTimeout(function () { go('Payment.html'); }, 900);
+      });
+    });
+
+    // forum
+    family('tag').concat(family('tags')).forEach(function (el) {
+      if (el.querySelector('[class="tag"],[class^="tag"]')) return;
+      var label = (textOf(el).match(/#?\w[\w/\-]*/) || [''])[0];
+      bind(el, function () { toast('Menampilkan diskusi untuk ' + label); });
+    });
+    document.querySelectorAll('.icon-like,.love').forEach(function (el) {
+      bind(el, function () { el.classList.toggle('is-liked'); });
+    });
+    family('post').forEach(function (el) {
+      if (!el.querySelector('.main6,[class^="main"]')) return;
+      var like = el.querySelector('.love,.icon-like');
+      bind(el, function (e) {
+        if (like && like.contains(e.target)) return;
+        toast('Detail diskusi belum tersedia di versi demo.');
+      });
+    });
+
+    // pagination daftar lowongan
+    document.querySelectorAll('.icon-button,.icon-button2').forEach(function (el) {
+      bind(el, function () { toast('Hanya ada satu halaman hasil pada versi demo.'); });
+    });
+
+    // kolom pencarian sungguhan
+    var sj = document.querySelector('[class^="search-by-job-tittle"]');
+    if (sj) makeSearch(sj, '[class^="job-list"]');
+    var sl = document.querySelector('.what-do-you-want-learn');
+    if (sl) makeSearch(sl, '.course');
+  }
+
   function init() {
     fitToScreen();
     window.addEventListener('resize', fitToScreen);
@@ -492,6 +648,7 @@
     initQuiz();
     initResult();
     initMisc();
+    initCards();
 
     CLASS_ROUTES.forEach(function (r) {
       document.querySelectorAll(r[0]).forEach(function (el) { bind(el, function () { go(r[1]); }); });

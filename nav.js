@@ -70,17 +70,29 @@
   var FIELD = 'width:100%;box-sizing:border-box;border:1px solid #d6ddeb;border-radius:10px;padding:11px 12px;font:500 15px sans-serif;margin:6px 0 14px;';
 
   /* ---------- 1. scale-to-fit ---------- */
+  // Halaman dengan posisi absolut penuh (hasil export Figma) punya lebar desain tetap.
+  // Halaman lain sudah fluid, jadi hanya diperkecil bila isinya melebihi lebar layar.
+  var FIXED_DESIGN = { 'Question.html': 1728, 'Result.html': 1440 };
+
   function fitToScreen() {
     var root = document.body.firstElementChild;
-    while (root && !(root.offsetWidth > 0) && root.nextElementSibling) root = root.nextElementSibling;
-    if (!root || root.tagName === 'SCRIPT') return;
-    var design = root._designW || (root._designW = root.offsetWidth);
-    if (!design) return;
-    var s = document.documentElement.clientWidth / design;
+    while (root && root.tagName === 'SCRIPT') root = root.nextElementSibling;
+    if (!root) return;
+    var vw = document.documentElement.clientWidth;
+    var design = FIXED_DESIGN[file];
+    var s = 1;
+    if (design) {
+      root.style.width = design + 'px';
+      s = vw / design;
+    } else {
+      root.style.zoom = ''; root.style.transform = '';
+      var content = root.scrollWidth;
+      if (content > vw + 1) s = vw / content;
+    }
     document.documentElement.style.overflowX = 'hidden';
     document.body.style.margin = '0';
     if ('zoom' in document.documentElement.style) {
-      root.style.zoom = s;
+      root.style.zoom = s === 1 && !design ? '' : s;
     } else {
       root.style.transformOrigin = '0 0';
       root.style.transform = 'scale(' + s + ')';
